@@ -55,24 +55,6 @@ st.markdown(hide_footer_css, unsafe_allow_html=True)
 
 data.dropna(inplace = True, axis = 0)
 
-data.rename(columns={
-    'Frequency [Classical]': 'Classical',          
-    'Frequency [Country]': 'Country',               
-    'Frequency [EDM]': 'EDM',                  
-    'Frequency [Folk]': 'Folk',                  
-    'Frequency [Gospel]': 'Gospel',                
-    'Frequency [Hip hop]': 'Hip hop',               
-    'Frequency [Jazz]': 'Jazz',                  
-    'Frequency [K pop]': 'K pop',                 
-    'Frequency [Latin]': 'Latin',                 
-    'Frequency [Lofi]': 'Lofi',                  
-    'Frequency [Metal]': 'Metal',                 
-    'Frequency [Pop]': 'Pop',                   
-    'Frequency [R&B]': 'R&B',                  
-    'Frequency [Rap]': 'Rap',               
-    'Frequency [Rock]': 'Rock',                 
-    'Frequency [Video game music]': 'Games music'      
-}, inplace=True)
 
 
 # """As the Data is collected through form let's look at some respondents background"""
@@ -379,6 +361,25 @@ def bivariate_analysis():
     ))
     st.plotly_chart(fig, use_container_width=True)
 
+    data.rename(columns={
+    'Frequency [Classical]': 'Classical',          
+    'Frequency [Country]': 'Country',               
+    'Frequency [EDM]': 'EDM',                  
+    'Frequency [Folk]': 'Folk',                  
+    'Frequency [Gospel]': 'Gospel',                
+    'Frequency [Hip hop]': 'Hip hop',               
+    'Frequency [Jazz]': 'Jazz',                  
+    'Frequency [K pop]': 'K pop',                 
+    'Frequency [Latin]': 'Latin',                 
+    'Frequency [Lofi]': 'Lofi',                  
+    'Frequency [Metal]': 'Metal',                 
+    'Frequency [Pop]': 'Pop',                   
+    'Frequency [R&B]': 'R&B',                  
+    'Frequency [Rap]': 'Rap',               
+    'Frequency [Rock]': 'Rock',                 
+    'Frequency [Video game music]': 'Games music'      
+    }, inplace=True)
+
     c1, c2 = st.columns([1,1])
     with c1:
         fig = go.Figure(data=[
@@ -427,41 +428,224 @@ def bivariate_analysis():
 
 def mental_health():
     st.title("Correlation with Mental Health")
-    # age_values = sorted(data['Age'].unique())
-    # condition_values = ['Anxiety', 'Depression', 'OCD', 'Insomnia']
-    # age_condition_values = [(age, condition) for age in age_values for condition in condition_values]
 
-    # # Create a list of data for each mental health condition
-    # data = []
-    # for condition in condition_values:
-    #     z_values = []
-    #     for age in age_values:
-    #         z_values.append(data[(data['Age Group']==age) & (data[condition]==1)].shape[0])
-    #     data.append(go.Contour(
-    #         x=age_values,
-    #         y=[condition]*len(age_values),
-    #         z=[z_values]*len(condition_values),
-    #         colorscale='blues',
-    #         contours=dict(start=0, end=max(z_values), size=max(z_values)/10),
-    #         name=condition
-    #     ))
+    feature = [feature for feature in data.columns if data[feature].dtypes != 'O' ]
 
-    # # Create the figure
-    # fig = go.Figure(data=data)
+    features = ['Age', 'Hours per day', 'BPM']
+    capping_outliers(data,features)
 
-    # # Update the layout
-    # fig.update_layout(
-    #     title="Contour Plot of Mental Health Conditions by Age and Condition",
-    #     xaxis_title="Age",
-    #     yaxis_title="Condition",
-    #     yaxis=dict(
-    #         tickmode='array',
-    #         tickvals=condition_values,
-    #         ticktext=condition_values
-    #     )
-    # )
-    # st.plotly_chart(fig, use_container_width=True)
+    bins= [0, 13, 30, 50, 100]
+    labels = ['Children', 'Teenagers', 'Adults', 'Senior Citizens']
+    data['Age Group'] = pd.cut(data['Age'], bins=bins, labels=labels, right=False)
 
+    data_while_work = data[data['While working']=='Yes']
+    data_without_work = data[data['While working']=='No']
+
+    data_while_work = data_while_work['Age Group'].value_counts()
+    data_without_work = data_without_work['Age Group'].value_counts()
+
+    fig = go.Figure(data=[
+        go.Bar(x = data_while_work.index, y = data_while_work.values, name='While working'),
+        go.Bar(x = data_without_work.index, y = data_without_work.values, name='While not working')
+    ])
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Age Group vs While Working', font=dict(size=25)),
+                xaxis_title = 'Age Group', yaxis_title = 'Value Counts', 
+                height = 600,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+    ))
+    st.plotly_chart(fig, use_container_width=True)
+
+    data_while_work = data[data['While working']=='Yes']
+    data_without_work = data[data['While working']=='No']
+
+    conditions = ['Anxiety', 'Depression', 'Insomnia', 'OCD']
+    while_work = [data_while_work['Anxiety'].mean(), data_while_work['Depression'].mean(), data_while_work['Insomnia'].mean(), data_while_work['OCD'].mean()]
+    without_work = [data_without_work['Anxiety'].mean(), data_without_work['Depression'].mean(), data_without_work['Insomnia'].mean(), data_without_work['OCD'].mean()]
+
+    
+    over_12 = [5.3125, 5.8125,  5.1875, 3.5]
+    under_12 = [5.9, 4.9, 3.8, 2.6]
+    condition = ['Anxiety', 'Depression', 'Insomnia', 'OCD']
+    # Create the trace for the upper bar
+    trace_while_work = go.Scatter(
+        x=while_work,
+        y=conditions,
+        mode='markers',
+        name='While Working',
+        marker=dict(
+            color='#1f77b4',
+            size=12,
+            line=dict(width=1)
+        )
+    )
+
+    # Create the trace for the lower bar
+    trace_without_work = go.Scatter(
+        x=without_work,
+        y=conditions,
+        mode='markers',
+        name='While Not Working',
+        marker=dict(
+            color='#ff7f0e',
+            size=12,
+            line=dict(width=1)
+        )
+    )
+
+    # Create the lines that connect the dots for each condition
+    lines = []
+    for i in range(len(condition)):
+        line = go.Scatter(
+            x=[while_work[i], without_work[i]],
+            y=[conditions[i], conditions[i]],
+            mode='lines',
+            line=dict(color='#bcbddc', width=1),
+            showlegend=False
+        )
+        lines.append(line)
+
+    # Create the layout for the chart
+    layout = go.Layout(
+        title='Mental Health Conditions for Listening Music While Work and While not Working',
+        xaxis=dict(
+            title='Value',
+            range=[0, max(max(over_12), max(under_12)) + 1]
+        ),
+        yaxis=dict(
+            title='Condition',
+            tickfont=dict(size=14)
+        ),
+        height=500,
+        margin=dict(l=100, r=100, t=100, b=100),
+        showlegend=True
+    )
+
+    # Put all the traces together and create the figure
+    data_ = [trace_while_work, trace_without_work] + lines
+    fig = go.Figure(data=data_, layout=layout)
+    fig.update_layout(template = 'plotly_dark')
+    st.plotly_chart(fig, use_container_width=True)
+
+    fig = px.histogram(data, x="Hours per day", y="Fav genre", color="Fav genre", 
+                   marginal="box", nbins=10, barmode="group")
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Fav Genre vs Sum of Hours Per Day', font=dict(size=25)),
+                xaxis_title = 'Sum of Hours Per Day', yaxis_title = 'Fav Genre', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+    ))
+    st.plotly_chart(fig, use_container_width=True)
+
+    # Create the trace for the upper bar
+    trace_over_12 = go.Scatter(
+        x=over_12,
+        y=condition,
+        mode='markers',
+        name='Over 12',
+        marker=dict(
+            color='#1f77b4',
+            size=12,
+            line=dict(width=1)
+        )
+    )
+
+    # Create the trace for the lower bar
+    trace_under_12 = go.Scatter(
+        x=under_12,
+        y=condition,
+        mode='markers',
+        name='Under 12',
+        marker=dict(
+            color='#ff7f0e',
+            size=12,
+            line=dict(width=1)
+        )
+    )
+
+    # Create the lines that connect the dots for each condition
+    lines = []
+    for i in range(len(condition)):
+        line = go.Scatter(
+            x=[under_12[i], over_12[i]],
+            y=[condition[i], condition[i]],
+            mode='lines',
+            line=dict(color='#bcbddc', width=1),
+            showlegend=False
+        )
+        lines.append(line)
+
+    # Create the layout for the chart
+    layout = go.Layout(
+        title='Mental Health Conditions for Over 12 Hours of Listening and Under 12 Hours of Listening',
+        xaxis=dict(
+            title='Value',
+            range=[0, max(max(over_12), max(under_12)) + 1]
+        ),
+        yaxis=dict(
+            title='Condition',
+            tickfont=dict(size=14)
+        ),
+        height=500,
+        margin=dict(l=100, r=100, t=100, b=100),
+        showlegend=True
+    )
+
+    # Put all the traces together and create the figure
+    data_ = [trace_over_12, trace_under_12] + lines
+    fig = go.Figure(data=data_, layout=layout)
+    fig.update_layout(template = 'plotly_dark')
+
+    fav_genre_among_teenagers = data[data['Age Group'] == 'Teenagers']
+    fav_genre_among_adults = data[data['Age Group'] == 'Adults']
+    fav_genre_among_senior_citizens = data[data['Age Group'] == 'Senior Citizens']
+    st.plotly_chart(fig, use_container_width=True)
+
+    fig = go.Figure(data=[
+        go.Bar(x = fav_genre_among_teenagers['Fav genre'].value_counts().index, y = fav_genre_among_teenagers['Fav genre'].value_counts().values, name='Teenagers'),
+        go.Bar(x = fav_genre_among_adults['Fav genre'].value_counts().index, y = fav_genre_among_adults['Fav genre'].value_counts().values, name = 'Adults'),
+        go.Bar(x = fav_genre_among_senior_citizens['Fav genre'].value_counts().index, y = fav_genre_among_senior_citizens['Fav genre'].value_counts().values, name = 'Senior Citizens'),
+    ])
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Age Group vs Fav Genre Count', font=dict(size=25)),
+                xaxis_title = 'Fav Genre', yaxis_title = 'Count', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+    ))
+    st.plotly_chart(fig, use_container_width=True)
+
+    music_effect_improve = data[data['Music effects'] == 'Improve']
+    music_effect_no_effect  = data[data['Music effects'] == 'No effect']
+    music_effect_worsen = data[data['Music effects'] == 'Worsen']
+
+    fig = go.Figure(data=[
+        go.Bar(x = music_effect_improve['Fav genre'].value_counts().index, y = music_effect_improve['Fav genre'].value_counts().values, name='Improve'),
+        go.Bar(x = music_effect_no_effect['Fav genre'].value_counts().index, y = music_effect_no_effect['Fav genre'].value_counts().values, name = 'No effect'),
+        go.Bar(x = music_effect_worsen['Fav genre'].value_counts().index, y = music_effect_worsen['Fav genre'].value_counts().values, name = 'Worsen'),
+    ])
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Genre vs Mental Health Results', font=dict(size=25)),
+                xaxis_title = 'Fav Genre', yaxis_title = 'Count', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+        ))
+    st.plotly_chart(fig, use_container_width=True)
 
 
 
