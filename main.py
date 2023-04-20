@@ -55,6 +55,25 @@ st.markdown(hide_footer_css, unsafe_allow_html=True)
 
 data.dropna(inplace = True, axis = 0)
 
+data.rename(columns={
+    'Frequency [Classical]': 'Classical',          
+    'Frequency [Country]': 'Country',               
+    'Frequency [EDM]': 'EDM',                  
+    'Frequency [Folk]': 'Folk',                  
+    'Frequency [Gospel]': 'Gospel',                
+    'Frequency [Hip hop]': 'Hip hop',               
+    'Frequency [Jazz]': 'Jazz',                  
+    'Frequency [K pop]': 'K pop',                 
+    'Frequency [Latin]': 'Latin',                 
+    'Frequency [Lofi]': 'Lofi',                  
+    'Frequency [Metal]': 'Metal',                 
+    'Frequency [Pop]': 'Pop',                   
+    'Frequency [R&B]': 'R&B',                  
+    'Frequency [Rap]': 'Rap',               
+    'Frequency [Rock]': 'Rock',                 
+    'Frequency [Video game music]': 'Games music'      
+}, inplace=True)
+
 
 # """As the Data is collected through form let's look at some respondents background"""
 def capping_outliers(data,feature):
@@ -313,6 +332,141 @@ def univariate_analysis():
 
     st.plotly_chart(fig, use_container_width=True)
 
+def bivariate_analysis():
+    st.title("Bivariate Analysis")
+
+    feature = [feature for feature in data.columns if data[feature].dtypes != 'O' ]
+
+    features = ['Age', 'Hours per day', 'BPM']
+    capping_outliers(data,features)
+
+    bins= [0, 13, 30, 50, 100]
+    labels = ['Children', 'Teenagers', 'Adults', 'Senior Citizens']
+    data['Age Group'] = pd.cut(data['Age'], bins=bins, labels=labels, right=False)
+
+    data_while_work = data[data['While working']=='Yes']
+    data_without_work = data[data['While working']=='No']
+
+    data_while_work = data_while_work['Age Group'].value_counts()
+    data_without_work = data_without_work['Age Group'].value_counts()
+
+    fig = go.Figure(data=[
+        go.Bar(x = data_while_work.index, y = data_while_work.values, name='While working'),
+        go.Bar(x = data_without_work.index, y = data_without_work.values, name='While not working')
+    ])
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Age Group vs While Working', font=dict(size=25)),
+                xaxis_title = 'Age Group', yaxis_title = 'Value Counts', 
+                height = 600,
+                width = 1200,
+                )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    fig = px.scatter(data, x="Age", y="Hours per day", color="Fav genre")
+    fig.update_traces(marker=dict(size=22,
+                              line=dict(width=2,
+                                        color='DarkSlateGrey')),
+                  selector=dict(mode='markers'))
+
+    fig.update_layout(template = 'plotly_dark', title = dict(text = 'Age and Hours Per Day By Fav Genre', font=dict(size=25)),
+                xaxis_title = 'Age', yaxis_title = 'Hours Per Day', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+    ))
+    st.plotly_chart(fig, use_container_width=True)
+
+    c1, c2 = st.columns([1,1])
+    with c1:
+        fig = go.Figure(data=[
+        go.Bar(x = data['Gospel'].value_counts().index, y = data['Gospel'].value_counts().values, name='Gospel'),
+        go.Bar(x = data['K pop'].value_counts().index, y = data['K pop'].value_counts().values, name='K pop'),
+        go.Bar(x = data['EDM'].value_counts().index, y = data['EDM'].value_counts().values, name='EDM'),
+        go.Bar(x = data['Pop'].value_counts().index, y = data['Pop'].value_counts().values, name='Pop'),
+        go.Bar(x = data['Games music'].value_counts().index, y = data['Games music'].value_counts().values, name='Games music'),
+        go.Bar(x = data['Country'].value_counts().index, y = data['Country'].value_counts().values, name='Country'),
+        go.Bar(x = data['R&B'].value_counts().index, y = data['R&B'].value_counts().values, name='R&B'),
+        ])
+
+        fig.update_layout(template = 'plotly_dark', title = dict(text = 'Frequency vs Value Counts', font=dict(size=25)),
+                xaxis_title = 'Frequency', yaxis_title = 'Value Counts', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
+    with c2:
+        fig = go.Figure(data=[
+        go.Bar(x = data['Rap'].value_counts().index, y = data['Rap'].value_counts().values, name='Rap'),
+        go.Bar(x = data['Rock'].value_counts().index, y = data['Rock'].value_counts().values, name='Rock'),
+        go.Bar(x = data['Metal'].value_counts().index, y = data['Metal'].value_counts().values, name='Metal'),
+        go.Bar(x = data['Lofi'].value_counts().index, y = data['Lofi'].value_counts().values, name='Lofi'),
+        go.Bar(x = data['Latin'].value_counts().index, y = data['Latin'].value_counts().values, name='Latin'),
+        go.Bar(x = data['Jazz'].value_counts().index, y = data['Jazz'].value_counts().values, name='Jazz'),
+        go.Bar(x = data['Folk'].value_counts().index, y = data['Folk'].value_counts().values, name='Folk'),
+        go.Bar(x = data['Classical'].value_counts().index, y = data['Classical'].value_counts().values, name='Classical'),
+        ])
+
+        fig.update_layout(template = 'plotly_dark', title = dict(text = 'Frequency vs Value Counts', font=dict(size=25)),
+                xaxis_title = 'Frequency', yaxis_title = 'Value Counts', 
+                height = 700,
+                width = 1200,
+                font=dict(
+                family="Courier New, monospace",
+                size=15,
+                color="White"
+        ))
+        st.plotly_chart(fig, use_container_width=True)
+
+def mental_health():
+    st.title("Correlation with Mental Health")
+    # age_values = sorted(data['Age'].unique())
+    # condition_values = ['Anxiety', 'Depression', 'OCD', 'Insomnia']
+    # age_condition_values = [(age, condition) for age in age_values for condition in condition_values]
+
+    # # Create a list of data for each mental health condition
+    # data = []
+    # for condition in condition_values:
+    #     z_values = []
+    #     for age in age_values:
+    #         z_values.append(data[(data['Age Group']==age) & (data[condition]==1)].shape[0])
+    #     data.append(go.Contour(
+    #         x=age_values,
+    #         y=[condition]*len(age_values),
+    #         z=[z_values]*len(condition_values),
+    #         colorscale='blues',
+    #         contours=dict(start=0, end=max(z_values), size=max(z_values)/10),
+    #         name=condition
+    #     ))
+
+    # # Create the figure
+    # fig = go.Figure(data=data)
+
+    # # Update the layout
+    # fig.update_layout(
+    #     title="Contour Plot of Mental Health Conditions by Age and Condition",
+    #     xaxis_title="Age",
+    #     yaxis_title="Condition",
+    #     yaxis=dict(
+    #         tickmode='array',
+    #         tickvals=condition_values,
+    #         ticktext=condition_values
+    #     )
+    # )
+    # st.plotly_chart(fig, use_container_width=True)
+
+
+
+
+
+
     
 def input():
     from pathlib import Path
@@ -392,7 +546,7 @@ def ml_model():
         ans = "Worsen"
     st.success("{}".format(ans))
 
-nav = st.sidebar.radio("Analysis", ["Home","About Dataset", "Data Cleaning", "Univariate Analysis", "Gender and Longevity Potential","Carbon Emissions and Longevity Potential","Sanitation and Longevity Potential","Schooling and Longevity Potential","Obesity Prevalence and Longevity Potential","About Us","ML Model"])
+nav = st.sidebar.radio("Analysis", ["Home","About Dataset", "Data Cleaning", "Univariate Analysis", "Bivariate Analysis","Mental Health","About Us","ML Model"])
 # st.sidebar.image("developed.png", use_column_width=True)
 
 # Show appropriate page based on selection
@@ -406,12 +560,12 @@ elif nav == "Univariate Analysis":
     univariate_analysis()
 elif nav == "ML Model":
     ml_model()
-elif nav == "Schooling and Longevity Potential":
-    schooling()
+elif nav == "Bivariate Analysis":
+    bivariate_analysis()
 elif nav == "About Us":
     about()
-elif nav == "Gender and Longevity Potential":
-    gender()
+elif nav == "Mental Health":
+    mental_health()
 elif nav == "Carbon Emissions and Longevity Potential":
     carbon_emissions()
 elif nav == "Sanitation and Longevity Potential":
